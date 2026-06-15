@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "PDFTool": {
+      "commandName": "Project",
+      "commandLineArgs": "IND OCI-JAGRUTI-P1.pdf IND OCI-JAGRUTI-P2.pdf",
+      "nativeDebugging": true
+    }
+  }
+}
