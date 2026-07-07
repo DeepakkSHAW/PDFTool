@@ -16,6 +16,38 @@ class Program
 			return;
 		}
 
+	// Split a PDF into single-page PDF files placed in the specified output folder.
+	static void SplitPdf(string inputFile, string outputFolder)
+	{
+		if (!File.Exists(inputFile))
+		{
+			throw new FileNotFoundException($"The file '{inputFile}' could not be found.");
+		}
+
+		if (!Directory.Exists(outputFolder))
+		{
+			Directory.CreateDirectory(outputFolder);
+		}
+
+		using (PdfDocument inputDocument = PdfReader.Open(inputFile, PdfDocumentOpenMode.Import))
+		{
+			int pageCount = inputDocument.PageCount;
+			for (int idx = 0; idx < pageCount; idx++)
+			{
+				using (PdfDocument outputDocument = new PdfDocument())
+				{
+					outputDocument.Version = inputDocument.Version;
+					outputDocument.Info.Title = Path.GetFileNameWithoutExtension(inputFile) + $" - Page {idx + 1}";
+					PdfPage page = inputDocument.Pages[idx];
+					outputDocument.AddPage(page);
+
+					string outPath = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(inputFile)}_page_{idx + 1}.pdf");
+					outputDocument.Save(outPath);
+				}
+			}
+		}
+	}
+
 		string cmd = args[0].ToLowerInvariant();
 
 		try
@@ -50,6 +82,21 @@ class Program
 				CombinePdfs(inputs, output);
 				Console.WriteLine($"Success! Created: {Path.GetFullPath(output)}");
 			}
+			else if (cmd == "split")
+			{
+				// Usage: split <input.pdf> <outputFolder>
+				if (args.Length < 3)
+				{
+					Console.WriteLine("Error: split requires an input file and an output folder.");
+					PrintUsage();
+					return;
+				}
+
+				string input = args[1];
+				string outFolder = args[2];
+				SplitPdf(input, outFolder);
+				Console.WriteLine($"Success! Split pages saved to: {Path.GetFullPath(outFolder)}");
+			}
 			else
 			{
 				// Backwards-compatible: if first arg isn't a command, treat all args as files to combine into combined.pdf
@@ -76,6 +123,7 @@ class Program
 		Console.WriteLine("Usage:");
 		Console.WriteLine("  Program.exe compress <input.pdf> <output.pdf>   - Compress a PDF file");
 		Console.WriteLine("  Program.exe combine <output.pdf> <in1.pdf> <in2.pdf> [...] - Combine PDFs");
+		Console.WriteLine("  Program.exe split <input.pdf> <outputFolder> - Split PDF into individual pages");
 		Console.WriteLine("  Program.exe <file1.pdf> <file2.pdf> [...] - Combine into combined.pdf (legacy)");
 	}
 
